@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Compra aprovada</title>
+<style>
+:root{--g:#075e54;--g2:#128c7e;--in:#fff;--out:#d9fdd3;--bg:#efeae2;--ink:#111b21;--mut:#667781;--red:#d93025}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:#dfe5e7;color:var(--ink)}
+.app{max-width:480px;height:100vh;height:100dvh;margin:0 auto;background:var(--bg);display:flex;flex-direction:column;position:relative;overflow:hidden}
+.screen{display:none;flex:1;flex-direction:column;min-height:0}
+.screen.on{display:flex}
+/* boas-vindas */
+#welcome{overflow-y:auto;align-items:center;justify-content:center;padding:28px;text-align:center;background:#fff;gap:14px}
+.ok{width:76px;height:76px;border-radius:50%;background:var(--g2);color:#fff;font-size:42px;display:grid;place-items:center}
+#welcome h1{font-size:24px}
+#welcome p{color:var(--mut);font-size:16px;line-height:1.4}
+#welcome input{width:100%;padding:15px;font-size:17px;border:2px solid #cfd8dc;border-radius:12px;text-align:center}
+#welcome input:focus{outline:none;border-color:var(--g2)}
+.btn{width:100%;padding:15px;border:0;border-radius:12px;background:var(--g2);color:#fff;font-size:17px;font-weight:700;cursor:pointer}
+.btn:focus-visible,button:focus-visible{outline:3px solid #25d366;outline-offset:2px}
+.err{color:var(--red);font-size:14px;min-height:18px}
+/* chat */
+.timer{background:var(--red);color:#fff;text-align:center;font-size:14px;font-weight:700;padding:8px;padding-top:calc(8px + env(safe-area-inset-top,0px))}
+.head{background:var(--g);color:#fff;display:flex;align-items:center;gap:10px;padding:8px 12px}
+.av{width:42px;height:42px;border-radius:50%;background:#25d366 center/cover;display:grid;place-items:center;font-size:22px;flex:none}
+.head b{display:block;font-size:16px}.head small{font-size:12px;opacity:.85}
+#msgs{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:12px;display:flex;flex-direction:column;gap:6px}
+.m{max-width:84%;padding:8px 10px 6px;border-radius:10px;font-size:15px;line-height:1.4;box-shadow:0 1px 1px rgba(0,0,0,.12);animation:pop .2s ease-out}
+.m.in{background:var(--in);align-self:flex-start;border-top-left-radius:2px}
+.m.out{background:var(--out);align-self:flex-end;border-top-right-radius:2px}
+.m time{display:block;text-align:right;font-size:11px;color:var(--mut);margin-top:2px}
+.m s{color:var(--mut)}
+.dots span{display:inline-block;width:7px;height:7px;margin:3px 2px;border-radius:50%;background:#9aa;animation:b 1s infinite}
+.dots span:nth-child(2){animation-delay:.15s}.dots span:nth-child(3){animation-delay:.3s}
+.chk{list-style:none;margin:6px 0}.chk li{padding:2px 0}
+.card{padding:0;overflow:hidden;width:84%}
+.card .img{height:170px;background:linear-gradient(135deg,#128c7e,#25d366) center/cover;display:grid;place-items:center;font-size:64px}
+.card .b{padding:10px}.card h4{font-size:16px;margin-bottom:4px}
+.card ul{list-style:none;font-size:14px;margin-top:6px}
+.price{font-size:20px;font-weight:800;color:var(--g)}
+.foot{background:#f0f2f5;padding:10px 12px;padding-bottom:calc(10px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:8px;min-height:70px}
+.foot button{padding:13px;border-radius:24px;border:1.5px solid var(--g2);background:#fff;color:var(--g);font-size:15px;font-weight:700;cursor:pointer}
+.foot button.p,.foot a.buy{background:#25d366;color:#fff;border-color:#25d366}
+.foot a.buy{display:block;text-align:center;text-decoration:none;padding:14px;border-radius:24px;border:1.5px solid #25d366;font-size:16px;font-weight:800;box-shadow:0 3px 10px rgba(37,211,102,.45)}
+.foot button.n{border-color:#cfd8dc;color:var(--mut);font-weight:500;font-size:14px}
+@keyframes pop{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes b{50%{transform:translateY(-4px)}}
+@media(prefers-reduced-motion:reduce){.m,.dots span{animation:none}}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- ETAPA 1 -->
+<section class="screen on" id="welcome">
+  <div class="ok">✓</div>
+  <h1>Compra aprovada!</h1>
+  <p>Para personalizar sua mensagem, digite seu primeiro nome.</p>
+  <input id="nome" type="text" placeholder="Seu primeiro nome" autocomplete="given-name" maxlength="20">
+  <div class="err" id="err"></div>
+  <button class="btn" id="go">Continuar</button>
+</section>
+
+<!-- ETAPA 2 -->
+<section class="screen" id="chat">
+  <div class="timer" id="timer"></div>
+  <div class="head"><div class="av" id="av">🚴</div><div><b id="hn"></b><small>online agora</small></div></div>
+  <div id="msgs"></div>
+  <div class="foot" id="foot"></div>
+</section>
+
+</div>
+<script>
+/* ========= EDITE AQUI ========= */
+const CFG = {
+  produto: "Pedale por Mais Tempo",
+  avatar: "",                 // URL da foto de perfil (vazio = ícone 🚴)
+  imgOferta: "",              // URL da imagem da oferta (vazio = ícone)
+  oferta: "Plano Completo de Resistência",
+  precoCheioUpsell: "39,90",  // preço riscado do upsell
+  precoUpsell: "21,90",
+  precoCheioDown: "21,90",    // preço riscado do downsell
+  precoDown: "12,90",
+  linkUpsell: "https://pay.cakto.com.br/daoa5xt_1183445",            // checkout R$ 21,90
+  linkDown: "https://pay.cakto.com.br/4ntdjpr",              // checkout R$ 12,90
+  destinoFinal: "",           // URL final (vazio = só mostra mensagem de encerramento)
+  minutos: 10
+};
+/* ============================== */
+
+const $ = id => document.getElementById(id);
+let nome = "";
+
+$("go").onclick = start;
+$("nome").addEventListener("keydown", e => { if (e.key === "Enter") start(); });
+
+function start(){
+  const v = $("nome").value.trim().split(/\s+/)[0];
+  if (!v){ $("err").textContent = "Digite seu primeiro nome para continuar."; return; }
+  nome = v.charAt(0).toUpperCase() + v.slice(1).toLowerCase();
+  $("welcome").classList.remove("on"); $("chat").classList.add("on");
+  $("hn").textContent = CFG.produto;
+  if (CFG.avatar){ $("av").style.backgroundImage = `url(${CFG.avatar})`; $("av").textContent = ""; }
+  runTimer(); step1();
+}
+
+function runTimer(){
+  let t = CFG.minutos * 60;
+  const el = $("timer");
+  const tick = () => {
+    if (t <= 0){ el.textContent = "⏰ Última chance: condição prestes a encerrar"; return; }
+    const m = String(Math.floor(t/60)).padStart(2,"0"), s = String(t%60).padStart(2,"0");
+    el.textContent = `⏰ Condição especial expira em ${m}:${s}`; t--; setTimeout(tick, 1000);
+  };
+  tick();
+}
+
+const hora = () => new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
+const wait = ms => new Promise(r => setTimeout(r, ms));
+function add(html, side="in", cls=""){
+  const d = document.createElement("div");
+  d.className = `m ${side} ${cls}`; d.innerHTML = html + `<time>${hora()}</time>`;
+  $("msgs").appendChild(d); $("msgs").scrollTop = 1e6; return d;
+}
+async function say(html, cls=""){
+  $("foot").innerHTML = "";
+  const t = document.createElement("div");
+  t.className = "m in"; t.innerHTML = '<span class="dots"><span></span><span></span><span></span></span>';
+  $("msgs").appendChild(t); $("msgs").scrollTop = 1e6;
+  await wait(1300); t.remove(); return add(html, "in", cls);
+}
+function choices(list){
+  const f = $("foot"); f.innerHTML = "";
+  list.forEach(([label, kind, fn, url]) => {
+    if (url){
+      const a = document.createElement("a");
+      a.className = "buy"; a.textContent = label; a.href = url; a.target = "_top"; a.rel = "noopener";
+      a.onclick = () => add(label, "out");
+      f.appendChild(a); return;
+    }
+    const b = document.createElement("button");
+    b.textContent = label; if (kind) b.className = kind;
+    b.onclick = () => { f.innerHTML = ""; fn(label); }; f.appendChild(b);
+  });
+}
+const reply = (txt, next) => { add(txt, "out"); setTimeout(next, 500); };
+const go = url => { if (url && url !== "#") location.href = url; };
+const offerCard = (preco, cheio) => `
+  <div class="img" ${CFG.imgOferta ? `style="background-image:url(${CFG.imgOferta})"` : ""}>${CFG.imgOferta ? "" : "🚴‍♂️"}</div>
+  <div class="b"><h4>${CFG.oferta}</h4>
+  <ul><li>✅ Planejamento de treinos para ganhar resistência</li><li>✅ Calculadora de ritmo</li><li>✅ Bônus para pedalar com menos desgaste</li></ul>
+  <p style="margin:8px 0 2px;font-size:13px;color:var(--mut)">Acesso digital • Pagamento único</p>
+  <p><s>R$ ${cheio}</s> <span class="price">R$ ${preco}</span></p></div>`;
+
+async function step1(){
+  await say(`Parabéns, <b>${nome}</b>! 🎉 Sua compra foi aprovada com sucesso.`);
+  await say(`Seu material <b>${CFG.produto}</b> já está sendo preparado, mas antes de liberar, consegui uma condição especial para quem quer organizar o treino com muito mais precisão. Em vez de pedalar no achismo, você pode concentrar o planejamento em um só lugar.`);
+  choices([["Quero conhecer","p",()=>reply("Quero conhecer",step2)]]);
+}
+async function step2(){
+  await say(`Um dos maiores problemas de quem pedala é ter informação e não conseguir transformá-la em um plano prático:<ul class="chk"><li>❌ Não saber quando acelerar e quando poupar</li><li>❌ Se cansar cedo por errar o ritmo</li><li>❌ Treinar sem uma sequência que evolua</li></ul>Por isso montei uma ferramenta focada em resistência: <b>${CFG.oferta}</b>, com calculadora e bônus.`);
+  choices([["Quero ver o que vem","p",()=>reply("Quero ver o que vem",step3)]]);
+}
+async function step3(){
+  await say(offerCard(CFG.precoUpsell, CFG.precoCheioUpsell).replace(/<p><s>.*<\/p>/,""), "card");
+  await say(`Você acabou de comprar o material principal. Essa condição fica disponível <b>somente nesta etapa</b>.`);
+  choices([["Quero ver a condição","p",()=>reply("Quero ver a condição",step4)]]);
+}
+async function step4(){
+  await say(`De <s>R$ ${CFG.precoCheioUpsell}</s> por apenas <b>R$ ${CFG.precoUpsell}</b> hoje. Essa condição fica disponível enquanto o contador estiver ativo.`);
+  choices([
+    [`Quero o plano por R$ ${CFG.precoUpsell}`,"p",null,CFG.linkUpsell],
+    ["Não, obrigado, quero apenas meu material","n",l=>reply(l,step5)]
+  ]);
+}
+async function step5(){
+  await say(`Entendo, <b>${nome}</b>, hoje está corrido por aqui, mas falei com meu superior e consegui liberar uma condição especial para você. <b>Essa é a sua última oportunidade.</b>`);
+  await say(offerCard(CFG.precoDown, CFG.precoCheioDown), "card");
+  await say(`Essa é a menor condição desta página. Se quiser aproveitar, é agora.`);
+  choices([
+    [`Quero por R$ ${CFG.precoDown}`,"p",null,CFG.linkDown],
+    ["Não, quero o meu material","n",async l=>{
+      add(l,"out");
+      await say(`Tudo certo, ${nome}! Seu material está sendo liberado. Bons pedais! 🚴`);
+      if (CFG.destinoFinal) setTimeout(()=>go(CFG.destinoFinal),1500);
+    }]
+  ]);
+}
+</script>
+</body>
+</html>
